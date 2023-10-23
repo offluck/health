@@ -1,9 +1,12 @@
-FROM --platform=linux/amd64 rust:latest AS builder
+FROM rust:latest AS builder
 WORKDIR /app
 COPY . .
-RUN cargo build --release
+RUN apt update && apt install musl-tools -y
+RUN rustup target add x86_64-unknown-linux-musl
+RUN cargo build --release --target x86_64-unknown-linux-musl
 
-FROM --platform=linux/amd64 debian:latest AS runner
-COPY --from=builder /app/target/release/health .
+FROM --platform=linux/amd64 alpine:latest AS runner
+WORKDIR /app
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/health .
 EXPOSE 8000
 CMD ["./health"]
